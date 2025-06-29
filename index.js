@@ -1,7 +1,9 @@
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
+const admin = require("firebase-admin");
 const express = require('express')
 const cors = require('cors')
+var serviceAccount = require("./firebaseKeyAdmin.json");
 // const jwt = require('jsonwebtoken')
 // const cookieParser = require('cookie-parser')
 const app = express()
@@ -10,9 +12,7 @@ app.use(cors())
 // app.use(cookieParser())
 app.use(express.json())
 
-var admin = require("firebase-admin");
 
-var serviceAccount = require("./firebaseKeyAdmin.json");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -40,18 +40,27 @@ admin.initializeApp({
 // }
 
 const verifyFirebaseToken = async (req, res, next) => {
-    const authHeader = req?.headers?.authorization;
-    // console.log(authHeader)
-    const token = authHeader.split(' ')[1];
-    // console.log(token)
-
-    if (!token) {
-        return res.status(401).send({ message: 'unauthorized' });
+    const authHeader = req?.headers?.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).send({message: 'unauthorized'})
     }
-    const userInfo = await admin.auth().verifyIdToken(token);
-    req.tokenEmail = userInfo?.email;
-    next();
-};
+    const token = authHeader.split(' ')[1]
+    try {
+        const decoded = await admin.auth().verifyIdToken(token)
+        req.decoded = decoded
+        next()
+    }
+    catch (error) {
+        return res.status(401).send({message: 'unauthorized'})
+    }
+}
+const verifyTokenEmail = async (req, res, next) => {
+    if (req.query.email !== req.decoded.email) {
+        return res.status(403).send({message: 'forbidden'})
+    }
+    next()
+}
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.SECURITY_KEY}@careerdev.6rwjfy7.mongodb.net/?retryWrites=true&w=majority&appName=careerDev`;
 
@@ -94,7 +103,8 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/jobs/applications', async (req, res) => {
+        app.get('/jobs/applications', verifyFirebaseToken, verifyTokenEmail, async (req, res) => {
+
             const jobs = await jobsCollection.find({
                 hr_email: req.query.email
             }).toArray()
@@ -123,17 +133,9 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/applications', verifyFirebaseToken, async (req, res) => {
+        app.get('/applications', verifyFirebaseToken, verifyTokenEmail, async (req, res) => {
 
             const {email} = req.query
-            // console.log(email, req?.decoded?.email)
-
-            if (req.tokenEmail !== email) {
-                return res.status(403).send({
-                    message: 'forbidden'
-                })
-            }
-
             const query = {
                 applicant: email
             }
