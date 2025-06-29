@@ -3,14 +3,11 @@ const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
 const express = require('express')
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
-const cookieParser = require('cookie-parser')
+// const cookieParser = require('cookie-parser')
 const app = express()
 const port = process.env.PORT || 3000
-app.use(cors({
-    origin: ['https://career-dev-clienttt.vercel.app'],
-    credentials: true
-}))
-app.use(cookieParser())
+app.use(cors())
+// app.use(cookieParser())
 app.use(express.json())
 
 var admin = require("firebase-admin");
@@ -46,6 +43,8 @@ const verifyFirebaseToken = async (req, res, next) => {
     const authHeader = req?.headers?.authorization;
     // console.log(authHeader)
     const token = authHeader.split(' ')[1];
+    // console.log(token)
+
     if (!token) {
         return res.status(401).send({ message: 'unauthorized' });
     }
@@ -73,18 +72,18 @@ async function run() {
         const jobsCollection = client.db('careerDev').collection('jobs')
         const applicationsCollection = client.db('careerDev').collection('applications')
 
-        app.post('/jwt', async (req, res) => {
-            const {email} = req.body
-            const user = {email}
-            const token = jwt.sign(user, process.env.JWT_SECRET, {
-                expiresIn: '2d'
-            })
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: false
-            })
-            res.send({success: true})
-        })
+        // app.post('/jwt', async (req, res) => {
+        //     const {email} = req.body
+        //     const user = {email}
+        //     const token = jwt.sign(user, process.env.JWT_SECRET, {
+        //         expiresIn: '2d'
+        //     })
+        //     res.cookie('token', token, {
+        //         httpOnly: true,
+        //         secure: false
+        //     })
+        //     res.send({success: true})
+        // })
         
         app.get('/jobs', async (req, res) => {
             const query = {}
@@ -124,16 +123,16 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/applications', verifyFirebaseToken, async (req, res) => {
+        app.get('/applications', async (req, res) => {
 
             const {email} = req.query
             // console.log(email, req?.decoded?.email)
 
-            if (req.tokenEmail !== email) {
-                return res.status(403).send({
-                    message: 'forbidden'
-                })
-            }
+            // if (req.tokenEmail !== email) {
+            //     return res.status(403).send({
+            //         message: 'forbidden'
+            //     })
+            // }
 
             const query = {
                 applicant: email
