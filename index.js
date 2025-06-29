@@ -19,25 +19,25 @@ admin.initializeApp({
 });
 
 
-const verifyToken = (req, res, next) => {
-    const token = req?.cookies?.token
-    // console.log(token)
-    if (!token) {
-        return res.status(401).send({
-            message: 'unauthorized'
-        })
-    }
-    jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
-        if (error) {
-            return res.status(401).send({
-                message: 'unauthorized'
-            })
-        }
-        req.decoded = decoded
-        // console.log(decoded)
-        next()
-    })
-}
+// const verifyToken = (req, res, next) => {
+//     const token = req?.cookies?.token
+//     // console.log(token)
+//     if (!token) {
+//         return res.status(401).send({
+//             message: 'unauthorized'
+//         })
+//     }
+//     jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+//         if (error) {
+//             return res.status(401).send({
+//                 message: 'unauthorized'
+//             })
+//         }
+//         req.decoded = decoded
+//         // console.log(decoded)
+//         next()
+//     })
+// }
 
 const verifyFirebaseToken = async (req, res, next) => {
     const authHeader = req?.headers?.authorization;
@@ -126,13 +126,13 @@ async function run() {
         app.get('/applications', async (req, res) => {
 
             const {email} = req.query
-            // console.log(email, req?.decoded?.email)
+            console.log(email, req?.decoded?.email)
 
-            // if (req.tokenEmail !== email) {
-            //     return res.status(403).send({
-            //         message: 'forbidden'
-            //     })
-            // }
+            if (req.tokenEmail !== email) {
+                return res.status(403).send({
+                    message: 'forbidden'
+                })
+            }
 
             const query = {
                 applicant: email
