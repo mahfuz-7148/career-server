@@ -123,10 +123,10 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/applications', async (req, res) => {
+        app.get('/applications', verifyFirebaseToken, async (req, res) => {
 
             const {email} = req.query
-            console.log(email, req?.decoded?.email)
+            // console.log(email, req?.decoded?.email)
 
             if (req.tokenEmail !== email) {
                 return res.status(403).send({
